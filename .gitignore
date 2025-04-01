@@ -8,3 +8,7 @@ venv/
 
 # VS Code settings
 .vscode/
+.vs/
+
+# Training data
+POP909/
