@@ -39,16 +39,14 @@ def get_chord_at_time(chords, time, prev_chord=None):
                 return chord
     return prev_chord or "N"
 
-def normalize_note(note_name, pitch_num, key_obj:m21key.Key):
+def normalize_note(note_name, key_obj:m21key.Key):
     p = m21pitch.Pitch(note_name)
     octave = p.octave
 
     # Let music21 respell to match key if needed
     p_in_key = p.getEnharmonic() if p.name not in [n.name for n in key_obj.pitches] else p
-    print(p_in_key)
 
     degree = key_obj.getScaleDegreeAndAccidentalFromPitch(p_in_key)
-    print(degree)
     if degree[1] is not None:
         degree = key_obj.getScaleDegreeAndAccidentalFromPitch(p)
         acc = degree[1]
@@ -62,6 +60,24 @@ def normalize_note(note_name, pitch_num, key_obj:m21key.Key):
     else:
         return f"NOTE_ON_DEGREE_{degree[0]}_OCT_{octave}"
 
+def normalize_chord(chord_name, key_obj:m21key.Key):
+    tonic, mode = chord_name.split(":")
+    p = m21pitch.Pitch(tonic)
+    p_in_key = p.getEnharmonic() if p.name not in [n.name for n in key_obj.pitches] else p
+    degree = key_obj.getScaleDegreeAndAccidentalFromPitch(p_in_key)
+    if degree[1] is not None:
+        degree = key_obj.getScaleDegreeAndAccidentalFromPitch(p)
+        acc = degree[1]
+        accidental = ""
+        if acc:
+            if acc.alter == 1:
+                accidental = "#"
+            elif acc.alter == -1:
+                accidental = "b"
+        return f"CHORD_{accidental}{degree[0]}_{mode}"
+    else:
+        return f"CHORD_{degree[0]}_{mode}"
+
 
 def quantize(x, step=0.125):
     return round(x / step) * step
@@ -72,7 +88,6 @@ def generate_token_sequence(melody_file, chord_file, key_file):
 
     tokens = ["START"]
     prev_chord = None
-    current_time = 0.0
 
     with open(melody_file) as f:
         for line in f:
@@ -80,30 +95,43 @@ def generate_token_sequence(melody_file, chord_file, key_file):
             start = float(start)
             end = float(end)
             duration = quantize(end - start)
-
-            # TIME_SHIFT from last event to this one
-            delta = quantize(start - current_time)
-            if delta > 0:
-                tokens.append(f"TIME_SHIFT_{delta}")
-
-            current_time = end
+            if duration <= 0.0 : continue
 
             # Chord change
             chord = get_chord_at_time(chords, start, prev_chord)
             if chord != prev_chord and chord != "N":
-                chord_token = f"CHORD_{chord.replace('#','sharp').replace('b','flat').replace(':','_').replace('/','_')}"
+                chord_token = normalize_chord(chord, key_obj)
                 tokens.append(chord_token)
                 prev_chord = chord
 
             # Melody note or rest
             if label != "N":
-                midi_num = m21pitch.Pitch(label).midi
-                note_token = normalize_note(label, midi_num, key_obj)
+                note_token = normalize_note(label, key_obj)
                 tokens.append(f"{note_token}_DUR_{duration}")
+            elif label == "N":
+                tokens.append(f"TIME_SHIFT_{duration}")
 
     tokens.append("END")
     return tokens
 
-#print(generate_token_sequence("POP909/001/melody_midi.txt", "POP909/001/chord_midi.txt", "POP909/001/key_audio.txt"))
+def SaveTokenSequence(folderPath):
+    melodyFile=f"{folderPath}melody_midi.txt"
+    chordFile=f"{folderPath}chord_midi.txt"
+    keyFile=f"{folderPath}key_audio.txt"
+
+    sequence = generate_token_sequence(melodyFile, chordFile, keyFile)
+
+    outFile = f"{folderPath}tokens.txt"
+    with open(outFile, "w") as f:
+        for token in sequence:
+            f.write(token + "\n")
+
+    print(f"Saved token sequence to {outFile}")
 
 
+def GenerateTokensTxt():
+    for i in range(1, 910):
+        folderPath = f"POP909/{i:03}/"
+        SaveTokenSequence(folderPath)
+
+GenerateTokensTxt()
