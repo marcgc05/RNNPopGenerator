@@ -128,10 +128,8 @@ def SaveTokenSequence(folderPath):
 
     print(f"Saved token sequence to {outFile}")
 
-
+#Run this to generate Tokens files
 def GenerateTokensTxt():
     for i in range(1, 910):
         folderPath = f"POP909/{i:03}/"
         SaveTokenSequence(folderPath)
-
-GenerateTokensTxt()
