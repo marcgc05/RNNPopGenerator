@@ -1,5 +1,6 @@
 import os
 from music21 import key as m21key, pitch as m21pitch
+from collections import Counter
 import math
 
 def parse_key(key_file):
