@@ -1,4 +1,4 @@
-import midiGen, tokenGen
+import midiGen, tokenGen, vocabTools
 
 #Run this to generate midi then tokens:
 #ensure that the POP909 data is in the repo folder.
