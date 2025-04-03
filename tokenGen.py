@@ -134,23 +134,3 @@ def GenerateTokensTxt():
     for i in range(1, 910):
         folderPath = f"POP909/{i:03}/"
         SaveTokenSequence(folderPath)
-
-#Run to generate the Vocab from tokens
-def GenerateVocabTxt():
-    token_counter = Counter()
-
-    for i in range(1,910):
-        filePath = f"POP909/{i:03}/tokens.txt"
-        with open(filePath) as f:
-            for line in f:
-                token = line.strip()
-                if token:
-                    token_counter[token] += 1
-
-    vocab = [token for token, _ in token_counter.most_common()]
-    output_file = "POP909/vocab.txt"
-    with open(output_file, "w") as f:
-        for token in vocab:
-            f.write(token + "\n")
-
-    print(f"Vocabulary saved to {output_file} with {len(vocab)} tokens.")
