@@ -40,27 +40,6 @@ def get_chord_at_time(chords, time, prev_chord=None):
                 return chord
     return prev_chord or "N"
 
-def normalize_note(note_name, key_obj:m21key.Key):
-    p = m21pitch.Pitch(note_name)
-    octave = p.octave
-
-    # Let music21 respell to match key if needed
-    p_in_key = p.getEnharmonic() if p.name not in [n.name for n in key_obj.pitches] else p
-
-    degree = key_obj.getScaleDegreeAndAccidentalFromPitch(p_in_key)
-    if degree[1] is not None:
-        degree = key_obj.getScaleDegreeAndAccidentalFromPitch(p)
-        acc = degree[1]
-        accidental = ""
-        if acc:
-            if acc.alter == 1:
-                accidental = "#"
-            elif acc.alter == -1:
-                accidental = "b"
-        return f"NOTE_ON_DEGREE_{accidental}{degree[0]}_OCT_{octave}"
-    else:
-        return f"NOTE_ON_DEGREE_{degree[0]}_OCT_{octave}"
-
 def normalize_chord(chord_name, key_obj:m21key.Key):
     tonic, mode = chord_name.split(":")
     p = m21pitch.Pitch(tonic)
@@ -81,7 +60,7 @@ def normalize_chord(chord_name, key_obj:m21key.Key):
 
 
 def quantize(x, step=0.125):
-    return round(x / step) * step
+    return round((x / step) + 1e-9) * step
 
 def generate_token_sequence(melody_file, chord_file, key_file):
     key_obj = parse_key(key_file)
@@ -89,7 +68,7 @@ def generate_token_sequence(melody_file, chord_file, key_file):
 
     tokens = ["START"]
     prev_chord = None
-
+    prev_midi = None
     with open(melody_file) as f:
         for line in f:
             start, end, label = line.strip().split()
@@ -104,11 +83,19 @@ def generate_token_sequence(melody_file, chord_file, key_file):
                 chord_token = normalize_chord(chord, key_obj)
                 tokens.append(chord_token)
                 prev_chord = chord
-
+            
             # Melody note or rest
             if label != "N":
-                note_token = normalize_note(label, key_obj)
-                tokens.append(f"{note_token}_DUR_{duration}")
+                current_midi = m21pitch.Pitch(label).midi
+
+                if prev_midi is None:
+                    interval = 0  # first note in file, no 'previous' note
+                else:
+                    interval = current_midi - prev_midi
+
+                tokens.append(f"INTERVAL_{interval}_DUR_{duration}")
+                prev_midi = current_midi
+
             elif label == "N":
                 tokens.append(f"TIME_SHIFT_{duration}")
 
