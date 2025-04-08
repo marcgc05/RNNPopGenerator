@@ -40,6 +40,27 @@ def get_chord_at_time(chords, time, prev_chord=None):
                 return chord
     return prev_chord or "N"
 
+def normalize_note(note_name, key_obj:m21key.Key):
+    p = m21pitch.Pitch(note_name)
+    octave = p.octave
+
+    # Let music21 respell to match key if needed
+    p_in_key = p.getEnharmonic() if p.name not in [n.name for n in key_obj.pitches] else p
+
+    degree = key_obj.getScaleDegreeAndAccidentalFromPitch(p_in_key)
+    if degree[1] is not None:
+        degree = key_obj.getScaleDegreeAndAccidentalFromPitch(p)
+        acc = degree[1]
+        accidental = ""
+        if acc:
+            if acc.alter == 1:
+                accidental = "#"
+            elif acc.alter == -1:
+                accidental = "b"
+        return f"INITIAL_{accidental}{degree[0]}_OCT_{octave}"
+    else:
+        return f"INITIAL_{degree[0]}_OCT_{octave}"
+
 def normalize_chord(chord_name, key_obj:m21key.Key):
     tonic, mode = chord_name.split(":")
     p = m21pitch.Pitch(tonic)
@@ -90,6 +111,7 @@ def generate_token_sequence(melody_file, chord_file, key_file):
 
                 if prev_midi is None:
                     interval = 0  # first note in file, no 'previous' note
+                    tokens.append(normalize_note(label, key_obj))
                 else:
                     interval = current_midi - prev_midi
 
