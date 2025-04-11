@@ -14,9 +14,19 @@ class TokenDatasetGen(Dataset):
         
     def samples_gen(self):
 
-        for folder_name in os.listdir(self.root_directory):
-            folder_path = os.path.join(self.root_dir, folder_name)
+        folders = [f for f in os.listdir(self.root_directory) 
+              if os.path.isdir(os.path.join(self.root_directory, f)) 
+              and f.isdigit()]  
+    
+        folders.sort(key=int)  # Sort numerically
+
+    # Use the filtered folders list in the loop instead of os.listdir
+        for folder_name in folders:  # Changed this line to use folders instead of os.listdir
+            print(folder_name)
+            folder_path = os.path.join(self.root_directory, folder_name)
+            print(folder_path)
             tokens_file = os.path.join(folder_path, "tokens.txt")
+            print(tokens_file)
 
             with open(tokens_file) as f:
                 tokens = [line.strip() for line in f if line.strip()]
@@ -26,7 +36,6 @@ class TokenDatasetGen(Dataset):
             for i in range(len(ids) - self.seq_len):
                 x_seq = ids[i : i + self.seq_len]
                 y_seq = ids[i + 1 : i + self.seq_len + 1]
-                #samples for training kept as [window, window + 1] which are [input, target]
                 self.samples.append((x_seq, y_seq))
 
     def __len__(self):
