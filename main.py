@@ -18,5 +18,5 @@ import generation
 
 # Run generation
 
-generation.generate_and_save_musicxml()
+#generation.generate_and_save_musicxml()
 

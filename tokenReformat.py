@@ -55,29 +55,28 @@ def respell_pitch_in_key(original_pitch: pitch.Pitch, key_obj: key.Key) -> pitch
 def tokens_to_musicxml(tokenfile, output):
     score = stream.Score()
     part = stream.Part()
-
+    
     # If your tokens truly came from Gb major, set that here
     # "G-" is music21's label for Gb
     key_obj = key.Key("G-", "major")
     part.insert(0, key_obj)
 
     # Add default time signature, tempo, etc.
-    part.append(clef.TenorClef())
+    part.append(clef.TrebleClef())
     part.append(meter.TimeSignature('4/4'))
     part.append(tempo.MetronomeMark(number=120))
     score.append(part)
 
     current_midi = None
+    duration = None
     current_time_from_start = 0.0
 
     with open(tokenfile, 'r') as f:
         tokens = f.read().splitlines()
 
     for token in tokens:
-        
         if token.startswith("TIME_SHIFT_"):
             # Rests or time gaps
-            duration = float(token.split("_")[2])
             part.append(note.Rest(duration))
             current_time_from_start += duration
 
@@ -92,9 +91,6 @@ def tokens_to_musicxml(tokenfile, output):
             quality = parts[2]        # 'maj', 'min', etc.
 
             # If you have weird extension like 'maj7/5', handle it here
-
-            if (quality.__contains__("/")):
-                quality= quality.partition("/")[0]
                 
             # Convert to a pitch
             root_pitch = chord_root_from_degree_str(key_obj, degree_str)
@@ -124,11 +120,11 @@ def tokens_to_musicxml(tokenfile, output):
             current_midi = anchor_pitch.midi
 
         elif token.startswith("INTERVAL_"):
-            # e.g. "INTERVAL_2_DUR_0.125"
+            # e.g. "INTERVAL_2"
             parts = token.split('_')
-            # parts = ["INTERVAL", "2", "DUR", "0.125"]
+            # parts = ["INTERVAL", "2"]
             interval = int(parts[1])
-            duration = float(parts[3])
+            duration = float(duration)
 
             if current_midi is None:
                 # No anchor set yet, default to middle C
@@ -149,6 +145,9 @@ def tokens_to_musicxml(tokenfile, output):
             current_time_from_start += duration
             current_midi = new_midi
 
+        elif(token.startswith("DUR")):
+            duration = float(token.split("_")[1])
+        
         elif token == "END":
             break
     
@@ -161,3 +160,6 @@ def tokens_to_musicxml(tokenfile, output):
     part.makeMeasures(inPlace=True)
     part.makeNotation(inPlace=True)
     score.write('musicxml', output)
+
+
+#tokens_to_musicxml("POP909/001/tokens.txt", "exampleOut.mxl")
