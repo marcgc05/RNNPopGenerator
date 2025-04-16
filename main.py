@@ -4,6 +4,7 @@ from vocabTools import load_vocab
 from TokenDatasetGen import TokenDatasetGen
 from MusicRNN import MusicRNN
 from MusicRNN import train_model
+import training
 import generation
 
 #Run this to generate midi then tokens:
@@ -19,4 +20,4 @@ import generation
 # Run generation
 
 #generation.generate_and_save_musicxml()
-
+#training.trainAndSaveModel()

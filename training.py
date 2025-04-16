@@ -6,7 +6,7 @@ from MusicRNN import MusicRNN
 from MusicRNN import train_model
 
 
-def train_model():
+def trainAndSaveModel():
 
     vocab, token_to_id, id_to_token = load_vocab()
     
