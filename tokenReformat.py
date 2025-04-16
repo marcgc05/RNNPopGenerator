@@ -1,4 +1,4 @@
-from music21 import stream, note, meter, tempo, harmony, pitch, key
+from music21 import stream, note, meter, tempo, harmony, pitch, key, clef
 
 def chord_root_from_degree_str(key_obj, deg_str):
     """
@@ -62,6 +62,7 @@ def tokens_to_musicxml(tokenfile, output):
     part.insert(0, key_obj)
 
     # Add default time signature, tempo, etc.
+    part.append(clef.TenorClef())
     part.append(meter.TimeSignature('4/4'))
     part.append(tempo.MetronomeMark(number=120))
     score.append(part)
@@ -77,6 +78,7 @@ def tokens_to_musicxml(tokenfile, output):
         if token.startswith("TIME_SHIFT_"):
             # Rests or time gaps
             duration = float(token.split("_")[2])
+            part.append(note.Rest(duration))
             current_time_from_start += duration
 
         elif token.startswith("CHORD_"):
