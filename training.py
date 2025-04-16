@@ -8,9 +8,9 @@ from MusicRNN import train_model
 
 def train_model():
 
-    vocab, id_to_token, token_to_id = load_vocab()
+    vocab, token_to_id, id_to_token = load_vocab()
     
-    dataset = TokenDatasetGen("C:/Users/natha/OneDrive/Documents/RNNPopGen/RNNPopGenerator/POP909", token_to_id)
+    dataset = TokenDatasetGen("POP909", token_to_id)
 
 
     model = MusicRNN(
