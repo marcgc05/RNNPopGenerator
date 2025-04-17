@@ -65,7 +65,7 @@ def train_model(model, train_dataset, valid_dataset=None, epochs=50, batch_size=
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
     start_epoch = 0
-    checkpoint_path = 'checkpoint.pth'
+    checkpoint_path = 'model_and_checkpoints/checkpoint.pth'
 
     # Resume from checkpoint if it exists
     if os.path.exists(checkpoint_path):
@@ -132,10 +132,15 @@ def train_model(model, train_dataset, valid_dataset=None, epochs=50, batch_size=
     return model
 
 def generate_music(model, token_to_id, id_to_token, seed_tokens=['START'], max_length=500, temperature=0.7):
-    model.load_state_dict(torch.load("C:/Users/natha/OneDrive/Documents/RNNPopGen/RNNPopGenerator/trained_model.pth"))
-    model.eval()  # Set to evaluation mode
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    model = model.to(device)
+    model.to(device)
+    model.eval()  # Set to evaluation mode
+
+    checkpoint = torch.load("model_and_checkpoints/trained_model.pth", map_location=device)
+    try:
+        model.load_state_dict(checkpoint['model_state_dict']) #If checkpoint contains extra data
+    except KeyError:
+        model.load_state_dict(checkpoint) #If checkpoint only contains model state_dict
     
     # Convert seed tokens to ids using helper function
     current_sequence = token_sequence_to_ids(seed_tokens, token_to_id)

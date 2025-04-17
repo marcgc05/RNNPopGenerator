@@ -6,24 +6,14 @@ from MusicRNN import MusicRNN
 from MusicRNN import generate_music
 from MusicRNN import train_model
 import tokenReformat
-import shutil
 
 # After training your model:
 
 def generate_and_save_musicxml():
-    
-    answer = input("Do you want to update the model to it's last saved checkpoint? y/n")
 
-    if (answer == "y"):
-        if os.path.exists("checkpoint.pth"):
-            shutil.copyfile("checkpoint.pth", "trained_model.pth")
-            print("Model updated: checkpoint.pth → trained_model.pth")
-        else:
-            print("checkpoint.pth not found. No update performed.")
-    
     vocab, token_to_id, id_to_token = load_vocab()
     
-    dataset = TokenDatasetGen("C:/Users/natha/OneDrive/Documents/RNNPopGen/RNNPopGenerator/POP909", token_to_id)
+    dataset = TokenDatasetGen("POP909", token_to_id)
 
     model = MusicRNN(
     vocab_size=len(vocab),
@@ -49,13 +39,29 @@ def generate_and_save_musicxml():
         temperature=0.7
     )
     
-    # Save tokens to a text file
-    token_file = 'generated_piece.txt'
+
+    #find the highest generated piece numerically
+    generated_pieces = os.listdir("generated_songs")
+    max_index = 0
+
+    for piece in generated_pieces:
+        if piece.startswith("generated_piece") and piece.endswith(".musicxml"):
+            try:
+                index = int(piece[len("generated_piece"):piece.rfind(".")])
+                if index > max_index:
+                    max_index = index
+            except ValueError:
+                continue
+
+    #name them accordingly
+    nextindex = max_index + 1
+    token_file = f'generated_songs/generated_piece{nextindex}.txt'
+    xml_file = f'generated_songs/generated_piece{nextindex}.musicxml'
+
     with open(token_file, 'w') as f:
         for token in generated_tokens:
             f.write(token + '\n')
 
     # Convert the saved tokens to MusicXML using the function from tokenReformat
-    xml_file = 'generated_piece.musicxml'
     tokenReformat.tokens_to_musicxml(token_file, xml_file)
     print(f"Music saved as {xml_file}")
