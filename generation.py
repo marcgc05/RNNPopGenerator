@@ -11,7 +11,7 @@ import tokenReformat
 
 def generate_and_save_musicxml():
 
-    vocab, token_to_id, id_to_token = load_vocab
+    vocab, token_to_id, id_to_token = load_vocab()
     
     dataset = TokenDatasetGen("POP909", token_to_id)
 
