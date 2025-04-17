@@ -6,10 +6,20 @@ from MusicRNN import MusicRNN
 from MusicRNN import generate_music
 from MusicRNN import train_model
 import tokenReformat
+import shutil
 
 # After training your model:
 
 def generate_and_save_musicxml():
+    
+    answer = input("Do you want to update the model to it's last saved checkpoint? y/n")
+
+    if (answer == "y"):
+        if os.path.exists("checkpoint.pth"):
+            shutil.copyfile("checkpoint.pth", "trained_model.pth")
+            print("Model updated: checkpoint.pth → trained_model.pth")
+        else:
+            print("checkpoint.pth not found. No update performed.")
     
     vocab, token_to_id, id_to_token = load_vocab()
     

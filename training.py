@@ -31,7 +31,7 @@ def trainAndSaveModel():
         model=model,
         train_dataset=train_dataset,
         valid_dataset=valid_dataset,
-        epochs=1,  
+        epochs=16,  
         batch_size=64,
         learning_rate=0.001
     )
