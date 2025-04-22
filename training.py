@@ -5,13 +5,13 @@ from TokenDatasetGen import TokenDatasetGen
 from MusicRNN import MusicRNN
 from MusicRNN import train_model
 
-
 def trainAndSaveModel():
 
     vocab, token_to_id, id_to_token = load_vocab()
     
     dataset = TokenDatasetGen("POP909", token_to_id)
 
+    
 
     model = MusicRNN(
     vocab_size=len(vocab),

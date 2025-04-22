@@ -4,7 +4,6 @@ from torch.utils.data import DataLoader
 import torch.optim as optim
 import numpy as np
 from vocabTools import token_sequence_to_ids, ids_to_token_sequence
-import os
 
 class MusicRNN(nn.Module):
     def __init__(self, vocab_size, embedding_dim=256, hidden_dim=512, num_layers=2, dropout=0.5):
@@ -56,55 +55,58 @@ class MusicRNN(nn.Module):
 
 def train_model(model, train_dataset, valid_dataset=None, epochs=50, batch_size=32, 
                 learning_rate=0.001, device='cuda' if torch.cuda.is_available() else 'cpu'):
-
+# Create data loaders
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     if valid_dataset:
         valid_loader = DataLoader(valid_dataset, batch_size=batch_size, shuffle=False)
-
+    
+    # Loss function and optimizer
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-
-    start_epoch = 0
-    checkpoint_path = 'model_and_checkpoints/checkpoint.pth'
-
-    # Resume from checkpoint if it exists
-    if os.path.exists(checkpoint_path):
-        print(f"Loading checkpoint from {checkpoint_path}")
-        checkpoint = torch.load(checkpoint_path, map_location=device)
-        model.load_state_dict(checkpoint['model_state_dict'])
-        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-        start_epoch = checkpoint['epoch'] + 1
-        print(f"Resuming from epoch {start_epoch}")
-
+    
+    # Move model to device
     model = model.to(device)
-
-    for epoch in range(start_epoch, epochs):
+    
+    # Training loop
+    for epoch in range(epochs):
         model.train()
         total_loss = 0
-
+        
         for batch_idx, (x, y) in enumerate(train_loader):
+            # Move data to device
             x = x.to(device)
             y = y.to(device)
+            
+            # Initialize hidden state
             hidden = model.init_hidden(x.size(0), device)
-
+            
+            # Zero the gradients
             optimizer.zero_grad()
+            
+            # Forward pass
             output, hidden = model(x, hidden)
+            
+            # Reshape output and target for loss calculation
             output = output.view(-1, output.size(-1))
             y = y.view(-1)
+            
+            # Calculate loss
             loss = criterion(output, y)
-
+            
+            # Backward pass and optimize
             loss.backward()
-            torch.nn.utils.clip_grad_norm_(model.parameters(), 5)
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 5)  # Gradient clipping
             optimizer.step()
-
+            
             total_loss += loss.item()
-
+            
             if batch_idx % 100 == 0:
-                print(f'Epoch {epoch+1}/{epochs} | Batch {batch_idx}/{len(train_loader)} | Loss: {loss.item():.4f}')
-
+                print(f'Epoch {epoch+1}/{epochs} | Batch {batch_idx}/{len(train_loader)} | '
+                    f'Loss: {loss.item():.4f}')
+        
         avg_loss = total_loss / len(train_loader)
         print(f'Epoch {epoch+1}/{epochs} | Average Loss: {avg_loss:.4f}')
-
+        
         # Validation
         if valid_dataset:
             model.eval()
@@ -118,29 +120,23 @@ def train_model(model, train_dataset, valid_dataset=None, epochs=50, batch_size=
                     output = output.view(-1, output.size(-1))
                     y = y.view(-1)
                     valid_loss += criterion(output, y).item()
-
+            
             avg_valid_loss = valid_loss / len(valid_loader)
             print(f'Validation Loss: {avg_valid_loss:.4f}')
 
-        torch.save({
-            'epoch': epoch,
-            'model_state_dict': model.state_dict(),
-            'optimizer_state_dict': optimizer.state_dict(),
-        }, checkpoint_path)
-        print(f"Checkpoint saved at epoch {epoch+1}")
-
-    return model
+    return model 
 
 def generate_music(model, token_to_id, id_to_token, seed_tokens=['START'], max_length=500, temperature=0.7):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    model.to(device)
-    model.eval()  # Set to evaluation mode
-
+    # Load checkpoint and extract only the model state dict
     checkpoint = torch.load("model_and_checkpoints/trained_model.pth", map_location=device)
-    try:
-        model.load_state_dict(checkpoint['model_state_dict']) #If checkpoint contains extra data
-    except KeyError:
-        model.load_state_dict(checkpoint) #If checkpoint only contains model state_dict
+    if isinstance(checkpoint, dict) and "model_state_dict" in checkpoint:
+        model.load_state_dict(checkpoint["model_state_dict"])
+    else:
+        model.load_state_dict(checkpoint)
+        
+    model.eval()  # Set to evaluation mode
+    model = model.to(device)
     
     # Convert seed tokens to ids using helper function
     current_sequence = token_sequence_to_ids(seed_tokens, token_to_id)

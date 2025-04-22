@@ -20,14 +20,7 @@ if (answer1 == "y"):
 
 #generation.generate_and_save_musicxml()
 
-answer = input("Do you want to update the model to it's last saved checkpoint? y/n")
-
-if (answer == "y"):
-    if os.path.exists("model_and_checkpoints/checkpoint.pth"):
-        shutil.copyfile("model_and_checkpoints/checkpoint.pth", "model_and_checkpoints/trained_model.pth")
-        print("Model updated: checkpoint.pth → trained_model.pth")
-    else:
-        print("checkpoint.pth not found. No update performed.")
+#training.trainAndSaveModel()
 
 #generating 5 pieces
 for i in range(5):
