@@ -92,6 +92,13 @@ def tokens_to_musicxml(tokenfile, output):
 
             # If you have weird extension like 'maj7/5', handle it here
                 
+            if quality == "maj6":
+                quality = "maj"
+            elif quality == "hdim7":
+                quality = "m7b5"
+            elif quality.endswith(")"):
+                quality = quality.split("(")[0]
+
             # Convert to a pitch
             root_pitch = chord_root_from_degree_str(key_obj, degree_str)
             # e.g. p.name might be 'B' if #3 in G- major is B
